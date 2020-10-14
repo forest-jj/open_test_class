@@ -1,0 +1,1 @@
+INSERT INTO SYS_USER (username,password,role) values ('Admin','$2a$10$8T3iahR5iD25P3mjAyP.XOFFIOG.MfwxOFb/63xUF/PcXl3JlYy/O','0')
