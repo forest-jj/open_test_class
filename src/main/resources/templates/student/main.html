@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>课程订阅</title>
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <style>
+        .layui-tab-title .layui-this { background-color:#009688; color: #eee;}
+        .first-tab i.layui-tab-close{
+            display:none!important;
+        }
+    </style>
+</head>
+<!--参考 layui 后台布局-->
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header">
+        <div class="layui-logo">课程订阅</div>
+        <!-- 头部区域（可配合layui已有的水平导航） -->
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item"><a href="javascript:;" id="logout">退出</a></li>
+        </ul>
+    </div>
+    <!-- 左侧菜单-->
+    <div id="mainmenu" class="layui-side layui-bg-black" >
+        <div class="layui-side-scroll">
+            <div class="navBar layui-side-scroll" id="navBarId">
+                <ul class="layui-nav layui-nav-tree layui-left-nav">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <dl class="layui-nav-child">
+                        <dd>
+                            <a href="javascript:;" data-id="订阅管理" data-title="订阅管理" data-url="/mainSubscribe" class="menuNvaBar">订阅管理</a></dd>
+                        <dd>
+                            <a href="javascript:;" data-id="取消管理" data-title="取消管理" data-url="/mainCancel" class="menuNvaBar">取消管理</a></dd>
+                         </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="layui-body">
+        <!-- 内容主体区域 -->
+        <div class="layui-tab" lay-filter="tab" lay-allowclose="true">
+            <ul class="layui-tab-title"></ul>
+            <div class="layui-tab-content"></div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="/layui/layui.all.js"></script>
+<script src="/js/core.util.js"></script>
+<script>
+    var layer = layui.layer;
+    var $ = jQuery = layui.jquery;
+    var form = layui.form;
+    var element = layui.element;
+    $(function () {
+        $(document).on('click','.menuNvaBar',function () {
+            var dataid = $(this);
+            if ($(".layui-tab-title li[lay-id]").length <= 0) {
+                var dataid = $(this);
+
+                active.tabAdd(dataid.attr("data-url"), dataid.attr("data-id"), dataid.attr("data-title"));
+            } else {
+                var isData = false;
+                $.each($(".layui-tab-title li[lay-id]"), function () {
+                    if ($(this).attr("lay-id") == dataid.attr("data-id")) {
+                        isData = true;
+                    }
+                })
+                if (isData == false) {
+                    active.tabAdd(dataid.attr("data-url"), dataid.attr("data-id"), dataid.attr("data-title"));
+                }
+            }
+            active.tabChange(dataid.attr("data-id"));
+        });
+
+
+
+        var active = {
+            tabAdd: function (url, id, title) {
+                if (url != "" && url != null && url != undefined) {
+                    element.tabAdd('tab', {
+                        title: title
+                        ,
+                        content: '<iframe data-frameid="' + id + '" frameborder="0" name="content" width="100%" src="' + url + '"></iframe>'
+                        ,
+                        id: id
+                    })
+                }
+                FrameWH();//计算框架高度
+            },
+            tabChange: function (id) {
+                //切换到指定Tab项
+                element.tabChange('tab', id); //切换到：用户管理
+                $("iframe[data-frameid='" + id + "']").attr("src", $("iframe[data-frameid='" + id + "']").attr("src"))//切换后刷新框架
+            },
+            tabDelete: function (id) {
+                element.tabDelete("tab", id);//删除
+            }
+        };
+
+        function FrameWH() {
+            var h = $(window).height() - 41 - 10 - 35 - 10 - 44 - 10;
+            $("iframe").css("height", h + "px");
+        };
+
+        //推出登录
+        $("#logout").click(function () {
+            layer.open({
+                content: '确定要退出登录么？',
+                yes: function(index, layero){
+                    layer.close(index); //如果设定了yes回调，需进行手工关闭
+                    top.window.location.href="/logout";
+
+                }
+            });
+        });
+    });
+</script>
+
+</html>

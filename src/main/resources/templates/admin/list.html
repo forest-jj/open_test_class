@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/css/custom.form.css">
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+<div class="layui-header">
+    <div class="layui-logo">用户管理</div>
+    <ul class="layui-nav layui-layout-right">
+    <li class="layui-nav-item"><a href="javascript:;" id="logout">退出</a></li>
+    </ul>
+</div>
+<div class="panel panel-default operation-user" hidden>
+    <div class="panel-heading title"></div>
+    <div class="layui-card-body">
+        <form class="layui-form layui-form-pane" action="" lay-filter="userInfo" style="width: 700px;margin-top: 10px">
+            <input name="userId" hidden/>
+            <input name="createTime" hidden/>
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户名:</label>
+                <div class="layui-input-block">
+                    <input type="username" name="username" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-form-label ">密码:</div>
+                <div class="layui-input-block">
+                    <input type="password" name="password" placeholder="请输入密码" autocomplete="off" class="layui-input" style="background:#eeeeee!important">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">角色:</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="role" value="1" title="老师" checked="" lay-filter="radio-type">
+                    <input type="radio" name="role" value="2" title="学生" checked="" lay-filter="radio-type">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button type="submit" class="layui-btn" lay-submit="" lay-filter="submit">保存</button>
+                    <button  class="layui-btn layui-btn-primary" id="btn_cancel">返回</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="user-table">
+    <table class="layui-table" id="userTable" lay-filter="userTable" ></table>
+</div>
+</div>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-group">
+        <button  type="button" class="layui-btn" lay-event="addUser">
+            <i class="layui-icon">&#xe608;</i> 添加
+        </button>
+    </div>
+</script>
+<script type="text/html" id="tool">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script src="/layui/layui.all.js"></script>
+<script src="/js/core.util.js"></script>
+<script  th:inline="none">
+        var layer = layui.layer;
+        var $ = jQuery = layui.jquery;
+        var form = layui.form;
+        var element = layui.element;
+        var table;
+        layui.config({
+            base: '/'
+        }).extend({
+            treetable: 'treetable-lay/treetable'
+        }).use(['table','treetable'], function () {
+
+            table = layui.table;
+            var renderTable = function () {
+                table.render({
+                    // 渲染表格
+                    url: '/sysUser/list',
+                    elem: '#userTable', // 表格id
+                    page: true, // 分页
+                    toolbar: '#toolbar',
+                    headers: {
+                        Authorization: CoreUtil.getData("token")
+                    },
+                    cols: [
+                        [
+                            {type: 'numbers'},
+                            {field: 'username', title: '用户名'},
+                            {field: 'role', title: '角色',minWidth: 120, templet: function (item) {
+                                return item.role == 0 ? '管理员' : (item.role == 1 ? '老师':'学生')
+                                }},
+                            {
+                                field: 'createTime', title: '创建时间', minWidth: 120, templet: function (item) {
+                                    return CoreUtil.formattime(item.createTime);
+                                }
+                            },
+                            {title: '操作', width: 250, toolbar: '#tool'}
+                        ]
+                    ]
+                });
+            }
+
+            renderTable();
+
+        //操作项事件
+        table.on('tool(userTable)', function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'del':
+                    deletedUser(data.userId, data.username);
+                    break;
+                case 'edit':
+                    $(".user-table").hide();
+                    $(".operation-user").show();
+                    $(".title").html("编辑用户");
+                    $(".operation-user input[name=userId]").val(data.userId);
+                    $(".operation-user input[name=username]").val(data.username);
+                    $(".operation-user input[name=password]").val(data.password);
+                    $(".operation-user input[name=createTime]").val(data.createTime);
+                    form.render(); //更新全部
+                    break;
+            }
+        });
+        table.on('toolbar(userTable)', function (obj) {
+            switch (obj.event) {
+                case 'addUser':
+                    $(".user-table").hide();
+                    $(".operation-user").show();
+                    $(".title").html("新增用户");
+                    $(".operation-user input[name=userId]").val("");
+                    $(".operation-user input[name=username]").val("");
+                    $(".operation-user input[name=password]").val("");
+                    form.render(); //更新全部
+                    break;
+            }
+        });
+        var deletedUser = function (userId, username) {
+            layer.open({
+                content: '确定要删除' + username + "?",
+                yes: function (index, layero) {
+                    layer.close(index); //如果设定了yes回调，需进行手工关闭
+                    CoreUtil.sendAjax("/sysUser/delete/" + userId, null, function (res) {
+                        layer.msg(res.msg);
+                        renderTable();
+                    }, "DELETE", false, function (res) {
+                        layer.msg("抱歉！删除用户数据有误");
+                    });
+                }
+            });
+        };
+        $("#btn_cancel").click(function () {
+            $(".user-table").show();
+            $(".operation-user").hide();
+            return false;
+        });
+
+        form.on('submit(submit)', function (data) {
+            if (data.field.id === undefined || data.field.id === null || data.field.id === "") {
+                CoreUtil.sendAjax("/sysUser/saveOrUpdate", JSON.stringify(data.field), function (res) {
+                    $(".user-table").show();
+                    $(".operation-user").hide();
+                    renderTable();
+                }, "POST", false, function (res) {
+                    layer.msg("抱歉！您暂无新增用户的权限");
+                });
+            } else {
+                CoreUtil.sendAjax("/sysUser/saveOrUpdate", JSON.stringify(data.field), function (res) {
+                    $(".user-table").show();
+                    $(".operation-user").hide();
+                    renderTable();
+                }, "PUT", false, function (res) {
+                    layer.msg("抱歉！您暂无编辑用户的权限");
+                });
+            }
+
+            return false;
+        });
+
+            //退出登录
+            $("#logout").click(function () {
+                layer.open({
+                    content: '确定要退出登录么？',
+                    yes: function(index, layero){
+                        layer.close(index); //如果设定了yes回调，需进行手工关闭
+                        top.window.location.href="/logout";
+
+                    }
+                });
+            });
+
+        });
+
+
+</script>
+</body>
+</html>
